@@ -1,0 +1,92 @@
+window {
+    background-color: transparent;
+}
+
+.header {
+    background-color: #24283b;
+    padding: 12px;
+    border-bottom: 1px solid #414868;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #c0caf5;
+}
+
+.notification-list {
+    background-color: transparent;
+}
+
+.notification-row {
+    background-color: rgba(29, 33, 45, 0.95);
+    padding: 12px;
+    margin: 8px;
+    border-radius: 8px;
+    min-width: 320px;
+}
+
+.notification-row > * {
+    min-width: 240px;
+}
+
+.notification-row.urgency-low {
+    border-left: 6px solid #7aa2f7;
+}
+
+.notification-row.urgency-normal {
+    border-left: 6px solid #9ece6a;
+}
+
+.notification-row.urgency-critical {
+    border-left: 6px solid #f7768e;
+}
+
+.notification-row-content {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.notification-row-content > * {
+    margin-right: 12px;
+}
+
+.notification-row-content image {
+    min-width: 64px;
+    min-height: 64px;
+}
+
+.notification-content {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.notification-footer {
+    margin-top: 8px;
+}
+
+.app-name {
+    font-size: 12px;
+    color: #a9b1d6;
+    font-weight: bold;
+}
+
+.timestamp {
+    font-size: 12px;
+    color: #a9b1d6;
+}
+
+.summary {
+    font-size: 18px;
+    color: #c0caf5;
+    font-weight: bold;
+    padding: 4px;
+}
+
+.body {
+    font-size: 14px;
+    color: #a9b1d6;
+    padding: 4px;
+    margin-bottom: 12px;
+    min-width: 240px;
+}

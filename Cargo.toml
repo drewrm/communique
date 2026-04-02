@@ -1,0 +1,15 @@
+[package]
+name = "notifications-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4"
+env_logger = "0.11.9"
+gtk4 = "0.11.1"
+gtk4-layer-shell = "0.8"
+log = "0.4.29"
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = { version = "1.50.0", features = ["macros", "signal", "rt-multi-thread"] }
+zbus = "5.14.0"
+zvariant = "5.1"
