@@ -127,9 +127,19 @@ fn poll_notifications(
                 );
                 let row = create_notification_row(&notification);
                 list_clone.prepend(&row);
+
+                // Fade in - delay slightly to allow widget to be created
+                let row_anim = row.clone();
+                source::timeout_add_local(std::time::Duration::from_millis(1), move || {
+                    row_anim.add_css_class("visible");
+                    row_anim.queue_draw();
+                    ControlFlow::Break
+                });
+
+                let row_map = row.clone();
                 if let Some(id) = notification.id {
                     let mut map = id_to_row_clone.lock().unwrap();
-                    map.insert(id, row.clone());
+                    map.insert(id, row_map);
                 }
                 debug!(
                     "Notification added, list size: {}",
@@ -147,7 +157,7 @@ fn poll_notifications(
             while let Ok(id) = close_rx.try_recv() {
                 let mut map = id_to_row_clone.lock().unwrap();
                 if let Some(row) = map.remove(&id) {
-                    dismiss_row(&row);
+                    dismiss_row_animated(&row);
                 }
             }
         }
@@ -157,7 +167,7 @@ fn poll_notifications(
                 debug!("Action invoked: {} for notification {}", action, id);
                 let mut map = id_to_row_clone.lock().unwrap();
                 if let Some(row) = map.remove(&id) {
-                    dismiss_row(&row);
+                    dismiss_row_animated(&row);
                 }
             }
         }
@@ -218,7 +228,7 @@ fn setup_row_dismiss_handler(row: &ListBoxRow) {
     let controller = gtk4::GestureClick::new();
     controller.connect_pressed(move |_controller, _n_press, _x, _y| {
         if let Some(row) = row_weak.upgrade() {
-            dismiss_row(&row);
+            dismiss_row_animated(&row);
         }
     });
     row.add_controller(controller);
@@ -245,6 +255,18 @@ fn dismiss_row(row: &ListBoxRow) {
     }
 }
 
+fn dismiss_row_animated(row: &ListBoxRow) {
+    row.add_css_class("closing");
+
+    let row_weak = row.downgrade();
+    source::timeout_add_local(std::time::Duration::from_millis(500), move || {
+        if let Some(row) = row_weak.upgrade() {
+            dismiss_row(&row);
+        }
+        ControlFlow::Break
+    });
+}
+
 fn setup_expiry_timer(row: &ListBoxRow, expire_timeout: i32) {
     let row_weak = row.downgrade();
     let timeout = if expire_timeout > 0 {
@@ -255,7 +277,7 @@ fn setup_expiry_timer(row: &ListBoxRow, expire_timeout: i32) {
 
     source::timeout_add_local(std::time::Duration::from_millis(timeout), move || {
         if let Some(row) = row_weak.upgrade() {
-            dismiss_row(&row);
+            dismiss_row_animated(&row);
         }
         ControlFlow::Break
     });

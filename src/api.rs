@@ -22,11 +22,6 @@ pub fn set_connection(conn: zbus::Connection) {
     let _ = CONNECTION.set(conn);
 }
 
-#[allow(dead_code)]
-pub fn get_action_tx() -> Option<mpsc::Sender<(u32, String)>> {
-    ACTION_TX.get().cloned()
-}
-
 pub fn dismiss_notification_by_id(id: u32) {
     if let Some(tx) = ACTION_CLOSE_TX.get() {
         let _ = tx.send(id);
