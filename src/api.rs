@@ -156,7 +156,7 @@ impl NotificationDaemon {
         body: String,
         actions: Vec<String>,
         hints: HashMap<String, zbus::zvariant::OwnedValue>,
-        _expire_timeout: i32,
+        expire_timeout: i32,
     ) -> Result<u32> {
 
         let urgency = if let Some(hint) = hints.get("urgency") {
@@ -192,7 +192,7 @@ impl NotificationDaemon {
                 urgency,
                 timestamp: std::time::SystemTime::now(),
                 icon: Some(_app_icon),
-                expire_timeout: _expire_timeout,
+                expire_timeout: expire_timeout as u64,
                 id: Some(id),
                 actions: actions_pairs,
             });

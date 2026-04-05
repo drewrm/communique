@@ -9,6 +9,10 @@ use log::debug;
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver, Sender};
 
+const ICON_SIZE: i32 = 64;
+const APP_ID: &str = "org.drewrm.communique.ui";
+const APP_NAMESPACE: &str = "org.drewrm.communique";
+
 #[derive(Clone, Debug)]
 pub struct Notification {
     pub app_name: String,
@@ -17,7 +21,7 @@ pub struct Notification {
     pub urgency: super::api::NotificationUrgency,
     pub timestamp: std::time::SystemTime,
     pub icon: Option<String>,
-    pub expire_timeout: i32,
+    pub expire_timeout: u64,
     pub id: Option<u32>,
     pub actions: Vec<(String, String)>,
 }
@@ -50,9 +54,9 @@ fn run_ui(rx: Receiver<Notification>, close_rx: Receiver<u32>, action_rx: Receiv
     let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
     let close_rx = std::sync::Arc::new(std::sync::Mutex::new(close_rx));
     let action_rx = std::sync::Arc::new(std::sync::Mutex::new(action_rx));
-    let id_to_row = std::sync::Arc::new(std::sync::Mutex::new(HashMap::new()));
+    let id_to_row = std::rc::Rc::new(std::sync::Mutex::new(HashMap::new()));
     let app = Application::builder()
-        .application_id("org.notifications-rs.ui")
+        .application_id(APP_ID)
         .build();
 
     app.connect_activate(move |app| {
@@ -87,6 +91,7 @@ fn create_window() -> Window {
 
 fn setup_layer_shell(window: &Window) {
     LayerShell::init_layer_shell(window);
+    window.set_namespace(Some(APP_NAMESPACE));
     window.set_layer(Layer::Top);
     window.set_exclusive_zone(0);
     window.set_anchor(Edge::Top, true);
@@ -110,7 +115,7 @@ fn poll_notifications(
     rx: std::sync::Arc<std::sync::Mutex<Receiver<Notification>>>,
     close_rx: std::sync::Arc<std::sync::Mutex<Receiver<u32>>>,
     action_rx: std::sync::Arc<std::sync::Mutex<Receiver<(u32, String)>>>,
-    id_to_row: std::sync::Arc<std::sync::Mutex<HashMap<u32, ListBoxRow>>>,
+    id_to_row: std::rc::Rc<std::sync::Mutex<HashMap<u32, ListBoxRow>>>,
 ) {
     let list_clone = list.clone();
     let rx_clone = rx.clone();
@@ -267,15 +272,10 @@ fn dismiss_row_animated(row: &ListBoxRow) {
     });
 }
 
-fn setup_expiry_timer(row: &ListBoxRow, expire_timeout: i32) {
+fn setup_expiry_timer(row: &ListBoxRow, expire_timeout: u64) {
     let row_weak = row.downgrade();
-    let timeout = if expire_timeout > 0 {
-        expire_timeout as u64
-    } else {
-        DEFAULT_EXPIRY_MS
-    };
 
-    source::timeout_add_local(std::time::Duration::from_millis(timeout), move || {
+    source::timeout_add_local(std::time::Duration::from_millis(expire_timeout), move || {
         if let Some(row) = row_weak.upgrade() {
             dismiss_row_animated(&row);
         }
@@ -423,6 +423,3 @@ fn create_actions_buttons(actions: &[(String, String)], notification_id: Option<
 
     actions_box
 }
-
-const DEFAULT_EXPIRY_MS: u64 = 10000;
-const ICON_SIZE: i32 = 64;
