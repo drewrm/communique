@@ -1,30 +1,19 @@
+use crate::api::Notification;
 use gtk4::{
-    gdk,
-    glib::{source, ControlFlow},
+    Application, Box, Label, ListBox, ListBoxRow, Orientation, Window, gdk,
+    glib::{ControlFlow, source},
     prelude::*,
-    Application, Box, Label, ListBox, ListBoxRow, Orientation, Window,
 };
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use log::debug;
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver, Sender};
 
+use crate::api::NotificationUrgency;
+
 const ICON_SIZE: i32 = 64;
 const APP_ID: &str = "org.drewrm.communique.ui";
 const APP_NAMESPACE: &str = "org.drewrm.communique";
-
-#[derive(Clone, Debug)]
-pub struct Notification {
-    pub app_name: String,
-    pub summary: String,
-    pub body: String,
-    pub urgency: super::api::NotificationUrgency,
-    pub timestamp: std::time::SystemTime,
-    pub icon: Option<String>,
-    pub expire_timeout: u64,
-    pub id: Option<u32>,
-    pub actions: Vec<(String, String)>,
-}
 
 pub struct NotificationUI {
     pub tx: Sender<Notification>,
@@ -55,9 +44,7 @@ fn run_ui(rx: Receiver<Notification>, close_rx: Receiver<u32>, action_rx: Receiv
     let close_rx = std::sync::Arc::new(std::sync::Mutex::new(close_rx));
     let action_rx = std::sync::Arc::new(std::sync::Mutex::new(action_rx));
     let id_to_row = std::rc::Rc::new(std::sync::Mutex::new(HashMap::new()));
-    let app = Application::builder()
-        .application_id(APP_ID)
-        .build();
+    let app = Application::builder().application_id(APP_ID).build();
 
     app.connect_activate(move |app| {
         let window = create_window();
@@ -275,12 +262,15 @@ fn dismiss_row_animated(row: &ListBoxRow) {
 fn setup_expiry_timer(row: &ListBoxRow, expire_timeout: u64) {
     let row_weak = row.downgrade();
 
-    source::timeout_add_local(std::time::Duration::from_millis(expire_timeout), move || {
-        if let Some(row) = row_weak.upgrade() {
-            dismiss_row_animated(&row);
-        }
-        ControlFlow::Break
-    });
+    source::timeout_add_local(
+        std::time::Duration::from_millis(expire_timeout),
+        move || {
+            if let Some(row) = row_weak.upgrade() {
+                dismiss_row_animated(&row);
+            }
+            ControlFlow::Break
+        },
+    );
 }
 
 fn create_notification_content(notification: &Notification) -> Box {
@@ -374,11 +364,11 @@ fn start_timestamp_timer(label: &Label, timestamp: std::time::SystemTime) {
     });
 }
 
-fn urgency_class(urgency: super::api::NotificationUrgency) -> String {
+fn urgency_class(urgency: NotificationUrgency) -> String {
     match urgency {
-        super::api::NotificationUrgency::Low => "urgency-low".to_string(),
-        super::api::NotificationUrgency::Normal => "urgency-normal".to_string(),
-        super::api::NotificationUrgency::Critical => "urgency-critical".to_string(),
+        NotificationUrgency::Low => "urgency-low".to_string(),
+        NotificationUrgency::Normal => "urgency-normal".to_string(),
+        NotificationUrgency::Critical => "urgency-critical".to_string(),
     }
 }
 
